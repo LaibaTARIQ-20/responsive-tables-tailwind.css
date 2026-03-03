@@ -1,105 +1,116 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 // ─────────────────────────────────────────────
 //  TeamTable.jsx
-//  Team / HR management table with:
-//  - Search by name or department
-//  - Sortable columns (click any header)
-//  - Presence dot on avatar (Online/Busy/Away/Offline)
-//  - Department colored pill
-//  - Task progress bar (color coded)
-//  - Hover-reveal Edit / Remove buttons
-//  - Dark / Light theme via `dark` prop
-//
-//  Usage: <TeamTable dark={true} />
 // ─────────────────────────────────────────────
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { teamMembers, presenceColors, deptColors } from "../../data/data";
 import Avatar from "../ui/Avatar";
+import Pagination from "../ui/Pagination";
 
 export default function TeamTable({ dark }) {
   const [sortCol, setSortCol] = useState("name");
   const [sortDir, setSortDir] = useState(1);
-  const [search,  setSearch]  = useState("");
+  const [search, setSearch] = useState("");
   const [hovered, setHovered] = useState(null);
+  const [page, setPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 4;
 
   // ── Theme colors ──────────────────────────────────────────
   const c = {
-    bg:       dark ? "#111318"               : "#ffffff",
-    bg2:      dark ? "#14161e"               : "#f8fafc",
-    border:   dark ? "rgba(255,255,255,0.07)": "#e2e8f0",
-    text:     dark ? "#f1f5f9"               : "#0f172a",
-    sub:      dark ? "rgba(255,255,255,0.4)" : "#64748b",
-    muted:    dark ? "rgba(255,255,255,0.2)" : "#94a3b8",
-    inputBg:  dark ? "rgba(255,255,255,0.06)": "#f1f5f9",
+    bg: dark ? "#111318" : "#ffffff",
+    bg2: dark ? "#14161e" : "#f8fafc",
+    border: dark ? "rgba(255,255,255,0.07)" : "#e2e8f0",
+    text: dark ? "#f1f5f9" : "#0f172a",
+    sub: dark ? "rgba(255,255,255,0.4)" : "#64748b",
+    muted: dark ? "rgba(255,255,255,0.2)" : "#94a3b8",
+    inputBg: dark ? "rgba(255,255,255,0.06)" : "#f1f5f9",
     inputBrd: dark ? "rgba(255,255,255,0.1)" : "#e2e8f0",
-    rowHov:   dark ? "rgba(255,255,255,0.03)": "#f8fafc",
-    track:    dark ? "rgba(255,255,255,0.1)" : "#e2e8f0",
-    dotBd:    dark ? "#111318"               : "#ffffff",
+    rowHov: dark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+    track: dark ? "rgba(255,255,255,0.1)" : "#e2e8f0",
+    dotBd: dark ? "#111318" : "#ffffff",
   };
 
   // ── Sort logic ────────────────────────────────────────────
-  const handleSort = col => {
-    if (sortCol === col) setSortDir(d => -d);
-    else { setSortCol(col); setSortDir(1); }
+  const handleSort = (col) => {
+    if (sortCol === col) setSortDir((d) => -d);
+    else {
+      setSortCol(col);
+      setSortDir(1);
+    }
   };
 
   // ── Filtered + sorted rows ────────────────────────────────
-  const sorted = [...teamMembers]
-    .filter(m =>
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.dept.toLowerCase().includes(search.toLowerCase())
+  const filtered = [...teamMembers]
+    .filter(
+      (m) =>
+        m.name.toLowerCase().includes(search.toLowerCase()) ||
+        m.dept.toLowerCase().includes(search.toLowerCase())
     )
-    .sort((a, b) => a[sortCol] > b[sortCol] ? sortDir : -sortDir);
+    .sort((a, b) => (a[sortCol] > b[sortCol] ? sortDir : -sortDir));
 
-  // ── Column definitions ────────────────────────────────────
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+
+  // Auto-adapt: clamp page whenever totalPages changes (filters/search)
+  useEffect(() => {
+    setPage((p) => Math.min(Math.max(1, p), totalPages));
+  }, [totalPages]);
+
+  const startIndex = (page - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentPageData = filtered.slice(startIndex, endIndex);
+
+  // ── Column definitions ─────────────────────────────���──────
   const cols = [
-    { key: "name",   label: "MEMBER"   },
-    { key: "dept",   label: "DEPT"     },
-    { key: "role",   label: "ROLE"     },
-    { key: "status", label: "STATUS"   },
-    { key: "tasks",  label: "PROGRESS" },
-    { key: "joined", label: "SINCE"    },
+    { key: "name", label: "MEMBER" },
+    { key: "dept", label: "DEPT" },
+    { key: "role", label: "ROLE" },
+    { key: "status", label: "STATUS" },
+    { key: "tasks", label: "PROGRESS" },
+    { key: "joined", label: "SINCE" },
   ];
 
-  // ── Render ────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────��────────
   return (
     <div
       style={{
-        background:   c.bg,
+        background: c.bg,
         borderRadius: 16,
-        border:       `1px solid ${c.border}`,
-        overflow:     "hidden",
-        boxShadow:    dark
+        border: `1px solid ${c.border}`,
+        overflow: "hidden",
+        boxShadow: dark
           ? "0 8px 32px rgba(0,0,0,0.4)"
           : "0 4px 24px rgba(0,0,0,0.07)",
       }}
     >
-
       {/* ── HEADER ── */}
       <div
         style={{
-          padding:        "20px 24px",
-          borderBottom:   `1px solid ${c.border}`,
-          display:        "flex",
-          alignItems:     "center",
+          padding: "20px 24px",
+          borderBottom: `1px solid ${c.border}`,
+          display: "flex",
+          alignItems: "center",
           justifyContent: "space-between",
-          gap:            16,
-          flexWrap:       "wrap",
+          gap: 16,
+          flexWrap: "wrap",
         }}
       >
         {/* Icon + Title */}
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div
             style={{
-              width:          42,
-              height:         42,
-              borderRadius:   12,
-              fontSize:       20,
-              display:        "flex",
-              alignItems:     "center",
+              width: 42,
+              height: 42,
+              borderRadius: 12,
+              fontSize: 20,
+              display: "flex",
+              alignItems: "center",
               justifyContent: "center",
-              background:     dark ? "rgba(99,102,241,0.15)" : "#ede9fe",
-              border:         dark ? "1px solid rgba(99,102,241,0.3)" : "1px solid #c4b5fd",
+              background: dark ? "rgba(99,102,241,0.15)" : "#ede9fe",
+              border: dark
+                ? "1px solid rgba(99,102,241,0.3)"
+                : "1px solid #c4b5fd",
             }}
           >
             👥
@@ -111,7 +122,7 @@ export default function TeamTable({ dark }) {
             <p style={{ margin: "4px 0 0", fontSize: 13, color: c.sub }}>
               {teamMembers.length} people ·{" "}
               <span style={{ color: "#10b981", fontWeight: 600 }}>
-                {teamMembers.filter(m => m.status === "Online").length} online now
+                {teamMembers.filter((m) => m.status === "Online").length} online now
               </span>
             </p>
           </div>
@@ -122,44 +133,47 @@ export default function TeamTable({ dark }) {
           <div style={{ position: "relative" }}>
             <span
               style={{
-                position:     "absolute",
-                left:         10,
-                top:          "50%",
-                transform:    "translateY(-50%)",
-                color:        c.muted,
-                fontSize:     14,
-                pointerEvents:"none",
+                position: "absolute",
+                left: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: c.muted,
+                fontSize: 14,
+                pointerEvents: "none",
               }}
             >
               🔍
             </span>
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search people…"
               style={{
-                background:   c.inputBg,
-                border:       `1px solid ${c.inputBrd}`,
+                background: c.inputBg,
+                border: `1px solid ${c.inputBrd}`,
                 borderRadius: 8,
-                padding:      "8px 12px 8px 34px",
-                fontSize:     13,
-                color:        c.text,
-                outline:      "none",
-                width:        190,
-                fontFamily:   "inherit",
+                padding: "8px 12px 8px 34px",
+                fontSize: 13,
+                color: c.text,
+                outline: "none",
+                width: 190,
+                fontFamily: "inherit",
               }}
             />
           </div>
           <button
             style={{
-              padding:      "8px 16px",
+              padding: "8px 16px",
               borderRadius: 8,
-              background:   "#6366f1",
-              border:       "none",
-              color:        "#ffffff",
-              fontSize:     13,
-              fontWeight:   600,
-              cursor:       "pointer",
+              background: "#6366f1",
+              border: "none",
+              color: "#ffffff",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
             }}
           >
             + Add Member
@@ -170,41 +184,41 @@ export default function TeamTable({ dark }) {
       {/* ── TABLE ── */}
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
-
           {/* Head */}
           <thead>
             <tr style={{ background: c.bg2 }}>
-              {cols.map(col => (
+              {cols.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => handleSort(col.key)}
                   style={{
-                    padding:       "12px 20px",
-                    textAlign:     "left",
-                    fontSize:      11,
-                    fontWeight:    600,
+                    padding: "12px 20px",
+                    textAlign: "left",
+                    fontSize: 11,
+                    fontWeight: 600,
                     letterSpacing: 1,
-                    cursor:        "pointer",
-                    userSelect:    "none",
-                    whiteSpace:    "nowrap",
-                    color:         sortCol === col.key ? "#6366f1" : c.muted,
-                    transition:    "color 0.15s",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    whiteSpace: "nowrap",
+                    color: sortCol === col.key ? "#6366f1" : c.muted,
+                    transition: "color 0.15s",
                   }}
                 >
                   {col.label}{" "}
-                  {sortCol === col.key
-                    ? <span style={{ color: "#6366f1" }}>{sortDir === 1 ? "↑" : "↓"}</span>
-                    : <span style={{ opacity: 0.3 }}>⇅</span>
-                  }
+                  {sortCol === col.key ? (
+                    <span style={{ color: "#6366f1" }}>{sortDir === 1 ? "↑" : "↓"}</span>
+                  ) : (
+                    <span style={{ opacity: 0.3 }}>⇅</span>
+                  )}
                 </th>
               ))}
               <th
                 style={{
-                  padding:       "12px 20px",
-                  textAlign:     "left",
-                  fontSize:      11,
-                  fontWeight:    600,
-                  color:         c.muted,
+                  padding: "12px 20px",
+                  textAlign: "left",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: c.muted,
                   letterSpacing: 1,
                 }}
               >
@@ -215,40 +229,39 @@ export default function TeamTable({ dark }) {
 
           {/* Body */}
           <tbody>
-            {sorted.map(m => {
-              const pct           = Math.round((m.done / m.tasks) * 100);
-              const dc            = deptColors[m.dept]     || "#6366f1";
-              const pc            = presenceColors[m.status];
-              const progressColor = pct >= 80 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#ef4444";
+            {currentPageData.map((m) => {
+              const pct = Math.round((m.done / m.tasks) * 100);
+              const dc = deptColors[m.dept] || "#6366f1";
+              const pc = presenceColors[m.status];
+              const progressColor =
+                pct >= 80 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#ef4444";
 
               return (
                 <tr
-                  key={m.name}
+                  key={`${m.name}-${m.dept}`}
                   onMouseEnter={() => setHovered(m.name)}
                   onMouseLeave={() => setHovered(null)}
                   style={{
-                    borderTop:  `1px solid ${c.border}`,
+                    borderTop: `1px solid ${c.border}`,
                     background: hovered === m.name ? c.rowHov : "transparent",
                     transition: "background 0.15s",
                   }}
                 >
-
                   {/* Member + avatar + presence dot */}
                   <td style={{ padding: "16px 20px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ position: "relative", flexShrink: 0 }}>
                         <Avatar initials={m.avatar} color={m.color} size={38} />
-                        {/* Presence dot */}
                         <span
                           style={{
-                            position:     "absolute",
-                            bottom:       -1,
-                            right:        -1,
-                            width:        11,
-                            height:       11,
+                            position: "absolute",
+                            bottom: -1,
+                            right: -1,
+                            width: 11,
+                            height: 11,
                             borderRadius: "50%",
-                            background:   pc,
-                            border:       `2px solid ${c.dotBd}`,
+                            background: pc,
+                            border: `2px solid ${c.dotBd}`,
                           }}
                         />
                       </div>
@@ -267,13 +280,13 @@ export default function TeamTable({ dark }) {
                   <td style={{ padding: "16px 20px" }}>
                     <span
                       style={{
-                        padding:      "4px 10px",
+                        padding: "4px 10px",
                         borderRadius: 7,
-                        fontSize:     12,
-                        fontWeight:   600,
-                        background:   dc + "18",
-                        color:        dc,
-                        border:       `1px solid ${dc}35`,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: dc + "18",
+                        color: dc,
+                        border: `1px solid ${dc}35`,
                       }}
                     >
                       {m.dept}
@@ -290,33 +303,33 @@ export default function TeamTable({ dark }) {
                     <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                       <span
                         style={{
-                          width:        8,
-                          height:       8,
+                          width: 8,
+                          height: 8,
                           borderRadius: "50%",
-                          background:   pc,
-                          flexShrink:   0,
+                          background: pc,
+                          flexShrink: 0,
                         }}
                       />
                       <span style={{ fontSize: 13, color: c.sub }}>{m.status}</span>
                     </div>
                   </td>
 
-                  {/* Progress bar */}
+                  {/* Progress */}
                   <td style={{ padding: "16px 20px", minWidth: 160 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div
                         style={{
-                          flex:         1,
-                          height:       6,
+                          flex: 1,
+                          height: 6,
                           borderRadius: 3,
-                          background:   c.track,
-                          overflow:     "hidden",
+                          background: c.track,
+                          overflow: "hidden",
                         }}
                       >
                         <div
                           style={{
-                            height:     "100%",
-                            width:      `${pct}%`,
+                            height: "100%",
+                            width: `${pct}%`,
                             borderRadius: 3,
                             background: progressColor,
                             transition: "width 0.6s ease",
@@ -325,11 +338,11 @@ export default function TeamTable({ dark }) {
                       </div>
                       <span
                         style={{
-                          fontSize:   12,
+                          fontSize: 12,
                           fontWeight: 700,
-                          color:      progressColor,
-                          minWidth:   32,
-                          textAlign:  "right",
+                          color: progressColor,
+                          minWidth: 32,
+                          textAlign: "right",
                         }}
                       >
                         {pct}%
@@ -340,45 +353,45 @@ export default function TeamTable({ dark }) {
                     </p>
                   </td>
 
-                  {/* Since year */}
+                  {/* Since */}
                   <td style={{ padding: "16px 20px", fontSize: 13, color: c.sub }}>
                     {m.joined}
                   </td>
 
-                  {/* Actions (show on hover) */}
+                  {/* Actions */}
                   <td style={{ padding: "16px 20px" }}>
                     <div
                       style={{
-                        display:    "flex",
-                        gap:        8,
-                        opacity:    hovered === m.name ? 1 : 0,
+                        display: "flex",
+                        gap: 8,
+                        opacity: hovered === m.name ? 1 : 0,
                         transition: "opacity 0.15s",
                       }}
                     >
                       <button
                         style={{
-                          padding:      "5px 12px",
+                          padding: "5px 12px",
                           borderRadius: 7,
-                          fontSize:     12,
-                          fontWeight:   500,
-                          cursor:       "pointer",
-                          background:   "transparent",
-                          border:       `1px solid ${c.border}`,
-                          color:        c.sub,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          background: "transparent",
+                          border: `1px solid ${c.border}`,
+                          color: c.sub,
                         }}
                       >
                         Edit
                       </button>
                       <button
                         style={{
-                          padding:      "5px 12px",
+                          padding: "5px 12px",
                           borderRadius: 7,
-                          fontSize:     12,
-                          fontWeight:   500,
-                          cursor:       "pointer",
-                          background:   "transparent",
-                          border:       "1px solid rgba(239,68,68,0.3)",
-                          color:        "#ef4444",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          background: "transparent",
+                          border: "1px solid rgba(239,68,68,0.3)",
+                          color: "#ef4444",
                         }}
                       >
                         Remove
@@ -395,17 +408,17 @@ export default function TeamTable({ dark }) {
       {/* ── FOOTER ── */}
       <div
         style={{
-          padding:        "14px 24px",
-          borderTop:      `1px solid ${c.border}`,
-          display:        "flex",
-          alignItems:     "center",
+          padding: "14px 24px",
+          borderTop: `1px solid ${c.border}`,
+          display: "flex",
+          alignItems: "center",
           justifyContent: "space-between",
-          flexWrap:       "wrap",
-          gap:            8,
+          flexWrap: "wrap",
+          gap: 8,
         }}
       >
         <p style={{ margin: 0, fontSize: 13, color: c.muted }}>
-          Showing {sorted.length} of {teamMembers.length} members
+          Showing {currentPageData.length} of {filtered.length} members
         </p>
 
         {/* Presence legend */}
@@ -414,11 +427,30 @@ export default function TeamTable({ dark }) {
             <div key={s} style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: col }} />
               <span style={{ fontSize: 12, color: c.muted }}>
-                {s} ({teamMembers.filter(m => m.status === s).length})
+                {s} ({teamMembers.filter((m) => m.status === s).length})
               </span>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ── PAGINATION ── */}
+      <div
+        style={{
+          padding: "14px 24px",
+          borderTop: `1px solid ${c.border}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Pagination
+          current={page}
+          total={totalPages}
+          onChange={(p) => setPage(p)}
+          gap={1}
+          dark={dark}
+        />
       </div>
     </div>
   );
