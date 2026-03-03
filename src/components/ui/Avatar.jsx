@@ -1,8 +1,26 @@
-export default function Avatar({ initials, color }) {
+// ─────────────────────────────────────────────
+//  Avatar.jsx
+//  A small colored circle with initials inside
+//  Usage: <Avatar initials="SJ" color="#3b82f6" size={36} />
+// ─────────────────────────────────────────────
+
+export default function Avatar({ initials, color, size = 36 }) {
   return (
     <div
-      className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold"
-      style={{ background: color + "22", border: `1px solid ${color}55`, color }}
+      style={{
+        width:          size,
+        height:         size,
+        borderRadius:   10,
+        flexShrink:     0,
+        background:     color + "22",
+        border:         `1.5px solid ${color}44`,
+        color:          color,
+        display:        "flex",
+        alignItems:     "center",
+        justifyContent: "center",
+        fontSize:       size * 0.3,
+        fontWeight:     700,
+      }}
     >
       {initials}
     </div>

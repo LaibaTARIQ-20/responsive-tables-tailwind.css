@@ -1,17 +1,41 @@
+// ─────────────────────────────────────────────
+//  StatusBadge.jsx
+//  Colored pill badge for order status
+//  Usage: <StatusBadge status="Paid" />
+//  Accepts: "Paid" | "Pending" | "Failed" | "Refunded"
+// ─────────────────────────────────────────────
+
+import { statusCfg } from "../../data/data";
+
 export default function StatusBadge({ status }) {
-  const styles = {
-    Active:   "bg-emerald-100 text-emerald-700 border border-emerald-200",
-    Inactive: "bg-gray-100   text-gray-500   border border-gray-200",
-    Pending:  "bg-amber-100  text-amber-600  border border-amber-200",
-  };
-  const dots = {
-    Active: "bg-emerald-500",
-    Inactive: "bg-gray-400",
-    Pending: "bg-amber-500",
-  };
+  const cfg = statusCfg[status] || statusCfg.Pending;
+
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${styles[status]}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${dots[status]}`} />
+    <span
+      style={{
+        display:        "inline-flex",
+        alignItems:     "center",
+        gap:            6,
+        padding:        "4px 10px",
+        borderRadius:   20,
+        fontSize:       12,
+        fontWeight:     600,
+        background:     cfg.bg,
+        color:          cfg.color,
+        border:         `1px solid ${cfg.border}`,
+        whiteSpace:     "nowrap",
+      }}
+    >
+      {/* Dot */}
+      <span
+        style={{
+          width:        6,
+          height:       6,
+          borderRadius: "50%",
+          background:   cfg.color,
+          flexShrink:   0,
+        }}
+      />
       {status}
     </span>
   );
